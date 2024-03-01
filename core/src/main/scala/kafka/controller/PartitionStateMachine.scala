@@ -363,6 +363,9 @@ class ZkPartitionStateMachine(config: KafkaConfig,
     partitions: Seq[TopicPartition],
     partitionLeaderElectionStrategy: PartitionLeaderElectionStrategy
   ): (Map[TopicPartition, Either[Exception, LeaderAndIsr]], Seq[TopicPartition]) = {
+    // 分区选举
+
+    // 获取zk中所有分区的state
     val getDataResponses = try {
       zkClient.getTopicPartitionStatesRaw(partitions)
     } catch {
@@ -379,6 +382,7 @@ class ZkPartitionStateMachine(config: KafkaConfig,
         TopicPartitionStateZNode.decode(getDataResponse.data, getDataResponse.stat) match {
           case Some(leaderIsrAndControllerEpoch) =>
             if (leaderIsrAndControllerEpoch.controllerEpoch > controllerContext.epoch) {
+              // 这里controllerEpoch大于，表示controller切换了
               val failMsg = s"Aborted leader election for partition $partition since the LeaderAndIsr path was " +
                 s"already written by another controller. This probably means that the current controller $controllerId went through " +
                 s"a soft failure and another controller was elected with epoch ${leaderIsrAndControllerEpoch.controllerEpoch}."
@@ -411,12 +415,16 @@ class ZkPartitionStateMachine(config: KafkaConfig,
           allowUnclean
         )
         leaderForOffline(controllerContext, partitionsWithUncleanLeaderElectionState).partition(_.leaderAndIsr.isEmpty)
+        // OfflinePartitionLeaderElectionStrategy(allowUnclean)：这是离线分区领导者选举策略。如果 allow.Unclean 为 true，那么允许从非同步副本中选举领导者。这种情况下，可能会丢失一些数据。
       case ReassignPartitionLeaderElectionStrategy =>
         leaderForReassign(controllerContext, validLeaderAndIsrs).partition(_.leaderAndIsr.isEmpty)
+        // ReassignPartitionLeaderElectionStrategy：这是重新分配分区领导者选举策略。通常在手动触发分区重新分配时使用。
       case PreferredReplicaPartitionLeaderElectionStrategy =>
         leaderForPreferredReplica(controllerContext, validLeaderAndIsrs).partition(_.leaderAndIsr.isEmpty)
+        // PreferredReplicaPartitionLeaderElectionStrategy：这是优先副本领导者选举策略。在这种策略下，会优先选择原始的首选领导者作为新的领导者。
       case ControlledShutdownPartitionLeaderElectionStrategy =>
         leaderForControlledShutdown(controllerContext, validLeaderAndIsrs).partition(_.leaderAndIsr.isEmpty)
+        // ControlledShutdownPartitionLeaderElectionStrategy:因为正常关闭 Broker 而引发 的分区 Leader 选举。
     }
     partitionsWithoutLeaders.foreach { electionResult =>
       val partition = electionResult.topicPartition

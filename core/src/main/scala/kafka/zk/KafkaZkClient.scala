@@ -215,6 +215,7 @@ class KafkaZkClient private[zk] (zooKeeperClient: ZooKeeperClient, isSecure: Boo
     createTopicPartition(leaderIsrAndControllerEpochs.keys.toSeq, expectedControllerEpochZkVersion)
     val createRequests = leaderIsrAndControllerEpochs.map { case (partition, leaderIsrAndControllerEpoch) =>
       val path = TopicPartitionStateZNode.path(partition)
+      // 这里构建state节点数据
       val data = TopicPartitionStateZNode.encode(leaderIsrAndControllerEpoch)
       CreateRequest(path, data, defaultAcls(path), CreateMode.PERSISTENT, Some(partition))
     }
