@@ -171,6 +171,7 @@ class KafkaController(val config: KafkaConfig,
         queuedEvent.awaitProcessing()
       }
     })
+    //controller选主：3 put startup
     eventManager.put(Startup)
     eventManager.start()
   }
@@ -1420,6 +1421,7 @@ class KafkaController(val config: KafkaConfig,
 
   private def processStartup(): Unit = {
     zkClient.registerZNodeChangeHandlerAndCheckExistence(controllerChangeHandler)
+    // controller选主：4 elect, 重新选举也是调用这个方法
     elect()
   }
 
@@ -1509,6 +1511,8 @@ class KafkaController(val config: KafkaConfig,
     }
 
     try {
+      // controller选主：epoch是从/controller_epoch获取，epochZkVersion是从controller_epoch的stat获取
+      // controller选主：5. registerControllerAndIncrementControllerEpoch进行ephemeral选举
       val (epoch, epochZkVersion) = zkClient.registerControllerAndIncrementControllerEpoch(config.brokerId)
       controllerContext.epoch = epoch
       controllerContext.epochZkVersion = epochZkVersion
@@ -2467,6 +2471,7 @@ class KafkaController(val config: KafkaConfig,
         case AlterIsrReceived(brokerId, brokerEpoch, isrsToAlter, callback) =>
           processAlterIsr(brokerId, brokerEpoch, isrsToAlter, callback)
         case Startup =>
+          // controller选主：3.2
           processStartup()
       }
     } catch {

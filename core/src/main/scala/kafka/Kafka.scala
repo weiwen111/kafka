@@ -105,7 +105,7 @@ object Kafka extends Logging {
             Exit.halt(1)
         }
       })
-
+      // controller选主：1.kafkaServer服务启动
       try server.startup()
       catch {
         case _: Throwable =>
