@@ -282,6 +282,7 @@ class KafkaServer(
         // Note that we allow the use of KRaft mode controller APIs when forwarding is enabled
         // so that the Envelope request is exposed. This is only used in testing currently.
         socketServer = new SocketServer(config, metrics, time, credentialProvider, apiVersionManager)
+        // 消息处理：socketServer 接受produce、fetch、controller类型请求
         socketServer.startup(startProcessingRequests = false)
 
         /* start replica manager */

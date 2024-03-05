@@ -341,6 +341,7 @@ class RequestChannel(val queueSize: Int,
                      time: Time,
                      val metrics: RequestChannel.Metrics) extends KafkaMetricsGroup {
   import RequestChannel._
+  // 消息处理：requestQueue
   private val requestQueue = new ArrayBlockingQueue[BaseRequest](queueSize)
   private val processors = new ConcurrentHashMap[Int, Processor]()
   val requestQueueSizeMetricName = metricNamePrefix.concat(RequestQueueSizeMetric)

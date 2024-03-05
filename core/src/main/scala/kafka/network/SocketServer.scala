@@ -127,6 +127,7 @@ class SocketServer(val config: KafkaConfig,
               controlPlaneListener: Option[EndPoint] = config.controlPlaneListener,
               dataPlaneListeners: Seq[EndPoint] = config.dataPlaneListeners): Unit = {
     this.synchronized {
+      // 消息处理：区分controller类型和其他类型（produce、fetch），防止其他类型过多阻塞controller消息的处理
       createControlPlaneAcceptorAndProcessor(controlPlaneListener)
       createDataPlaneAcceptorsAndProcessors(config.numNetworkThreads, dataPlaneListeners)
       if (startProcessingRequests) {
@@ -820,6 +821,7 @@ private[kafka] class Processor(val id: Int,
 
   private val newConnections = new ArrayBlockingQueue[SocketChannel](connectionQueueSize)
   private val inflightResponses = mutable.Map[String, RequestChannel.Response]()
+  // 消息处理：responseQueue
   private val responseQueue = new LinkedBlockingDeque[RequestChannel.Response]()
 
   private[kafka] val metricTags = mutable.LinkedHashMap(
