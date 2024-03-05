@@ -37,12 +37,12 @@ public class KafkaConsumerProducerDemo {
 
     public static void main(String[] args) {
         try {
-            if (args.length == 0) {
-                Utils.printHelp("This example takes 2 parameters (i.e. 10000 sync):%n" +
-                    "- records: total number of records to send (required)%n" +
-                    "- mode: pass 'sync' to send records synchronously (optional)");
-                return;
-            }
+//            if (args.length == 0) {
+//                Utils.printHelp("This example takes 2 parameters (i.e. 10000 sync):%n" +
+//                    "- records: total number of records to send (required)%n" +
+//                    "- mode: pass 'sync' to send records synchronously (optional)");
+//                return;
+//            }
 
             int numRecords = Integer.parseInt(args[0]);
             boolean isAsync = args.length == 1 || !args[1].trim().equalsIgnoreCase("sync");
