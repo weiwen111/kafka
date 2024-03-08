@@ -926,6 +926,7 @@ public class KafkaAdminClient extends AdminClient {
                 log.debug("{} failed: {}. Beginning retry #{}",
                     this, prettyPrintException(throwable), tries);
             }
+            // 重试逻辑，会将call重新放回pendingCalls
             maybeRetry(now, throwable);
         }
 
@@ -1190,6 +1191,7 @@ public class KafkaAdminClient extends AdminClient {
          */
         private boolean maybeDrainPendingCall(Call call, long now) {
             try {
+                // nodeProvider: 不同消息类型使用不同的provider
                 Node node = call.nodeProvider.provide();
                 if (node != null) {
                     log.trace("Assigned {} to node {}", call, node);
@@ -1478,9 +1480,11 @@ public class KafkaAdminClient extends AdminClient {
                 }
 
                 // Choose nodes for our pending calls.
+                // maybeDrainPendingCalls 进行异步请求
                 pollTimeout = Math.min(pollTimeout, maybeDrainPendingCalls(now));
                 long metadataFetchDelayMs = metadataManager.metadataFetchDelayMs(now);
                 if (metadataFetchDelayMs == 0) {
+                    // 刷新metadata
                     metadataManager.transitionToUpdatePending(now);
                     Call metadataCall = makeMetadataCall(now);
                     // Create a new metadata fetch call and add it to the end of pendingCalls.
@@ -1509,6 +1513,7 @@ public class KafkaAdminClient extends AdminClient {
 
                 // Update the current time and handle the latest responses.
                 now = time.milliseconds();
+                // 异步处理响应数据
                 handleResponses(now, responses);
             }
         }

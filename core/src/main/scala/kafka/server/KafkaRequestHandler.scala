@@ -111,6 +111,7 @@ class KafkaRequestHandler(
       // time should be discounted by # threads.
       val startSelectTime = time.nanoseconds
 
+      // kafka request消息处理，从队列获取消息
       val req = requestChannel.receiveRequest(300)
       val endTime = time.nanoseconds
       val idleTime = endTime - startSelectTime
@@ -157,6 +158,7 @@ class KafkaRequestHandler(
             request.requestDequeueTimeNanos = endTime
             trace(s"Kafka request handler $id on broker $brokerId handling request $request")
             threadCurrentRequest.set(request)
+            // 处理普通消息
             apis.handle(request, requestLocal)
           } catch {
             case e: FatalExitError =>
@@ -213,6 +215,8 @@ class KafkaRequestHandlerPool(
   this.logIdent = "[" + logAndThreadNamePrefix + " Kafka Request Handler on Broker " + brokerId + "], "
   val runnables = new mutable.ArrayBuffer[KafkaRequestHandler](numThreads)
   for (i <- 0 until numThreads) {
+    // kafka request消息处理, 线程创建
+    // 这里区分brock和controller，是通过上层分别初始化
     createHandler(i)
   }
 

@@ -695,6 +695,7 @@ public class NetworkClient implements KafkaClient {
      * @return The node with the fewest in-flight requests.
      */
     @Override
+    // 随机获取一个online的node，获取负载低的
     public Node leastLoadedNode(long now) {
         List<Node> nodes = this.metadataUpdater.fetchNodes();
         if (nodes.isEmpty())

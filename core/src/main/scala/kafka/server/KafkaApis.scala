@@ -2092,6 +2092,7 @@ class KafkaApis(val requestChannel: RequestChannel,
   }
 
   def handleDeleteTopicsRequest(request: RequestChannel.Request): Unit = {
+    // 删除topic，删除前可能要重定向，因为需要在controller节点进行删除
     val zkSupport = metadataSupport.requireZkOrThrow(KafkaApis.shouldAlwaysForward(request))
     val controllerMutationQuota = quotas.controllerMutation.newQuotaFor(request, strictSinceVersion = 5)
 
@@ -2107,6 +2108,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     val results = new DeletableTopicResultCollection(deleteTopicRequest.numberOfTopics())
     val toDelete = mutable.Set[String]()
     if (!zkSupport.controller.isActive) {
+      // 当前节点不是controller
       deleteTopicRequest.topics().forEach { topic =>
         results.add(new DeletableTopicResult()
           .setName(topic.name())
@@ -2115,6 +2117,7 @@ class KafkaApis(val requestChannel: RequestChannel,
       }
       sendResponseCallback(results)
     } else if (!config.deleteTopicEnable) {
+      // deletetopic开关没有开启
       val error = if (request.context.apiVersion < 3) Errors.INVALID_REQUEST else Errors.TOPIC_DELETION_DISABLED
       deleteTopicRequest.topics().forEach { topic =>
         results.add(new DeletableTopicResult()
@@ -2126,6 +2129,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     } else {
       val topicIdsFromRequest = deleteTopicRequest.topicIds().asScala.filter(topicId => topicId != Uuid.ZERO_UUID).toSet
       deleteTopicRequest.topics().forEach { topic =>
+        // topic 名称和uuid不能同时设置
         if (topic.name() != null && topic.topicId() != Uuid.ZERO_UUID)
           throw new InvalidRequestException("Topic name and topic ID can not both be specified.")
         val name = if (topic.topicId() == Uuid.ZERO_UUID) topic.name()

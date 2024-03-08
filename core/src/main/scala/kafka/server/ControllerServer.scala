@@ -314,6 +314,7 @@ class ControllerServer(
         time,
         s"controller-${config.nodeId}-")
       clientQuotaMetadataManager = new ClientQuotaMetadataManager(quotaManagers, socketServer.connectionQuotas)
+      // 初始化apis为controllerApis
       controllerApis = new ControllerApis(socketServer.dataPlaneRequestChannel,
         authorizer,
         quotaManagers,
@@ -325,6 +326,8 @@ class ControllerServer(
         registrationsPublisher,
         apiVersionManager,
         metadataCache)
+      // kafka request消息处理
+      // zk模式使用
       controllerApisHandlerPool = new KafkaRequestHandlerPool(config.nodeId,
         socketServer.dataPlaneRequestChannel,
         controllerApis,

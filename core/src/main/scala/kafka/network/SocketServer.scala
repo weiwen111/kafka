@@ -171,6 +171,7 @@ class SocketServer(val config: KafkaConfig,
   if (apiVersionManager.listenerType.equals(ListenerType.CONTROLLER)) {
     config.controllerListeners.foreach(createDataPlaneAcceptorAndProcessors)
   } else {
+    // 构建控制器发送请求和普通数据请求处理器
     config.controlPlaneListener.foreach(createControlPlaneAcceptorAndProcessor)
     config.dataPlaneListeners.foreach(createDataPlaneAcceptorAndProcessors)
   }
@@ -246,8 +247,10 @@ class SocketServer(val config: KafkaConfig,
     connectionQuotas.addListener(config, endpoint.listenerName)
     val isPrivilegedListener = controlPlaneRequestChannelOpt.isEmpty &&
       config.interBrokerListenerName == endpoint.listenerName
+    // 普通数据处理器
     val dataPlaneAcceptor = createDataPlaneAcceptor(endpoint, isPrivilegedListener, dataPlaneRequestChannel)
     config.addReconfigurable(dataPlaneAcceptor)
+    // 普通数据处理器，进行配置，默认启动3个Processor
     dataPlaneAcceptor.configure(parsedConfigs)
     dataPlaneAcceptors.put(endpoint, dataPlaneAcceptor)
     info(s"Created data-plane acceptor and processors for endpoint : ${endpoint.listenerName}")
@@ -259,6 +262,7 @@ class SocketServer(val config: KafkaConfig,
     }
     connectionQuotas.addListener(config, endpoint.listenerName)
     val controlPlaneAcceptor = createControlPlaneAcceptor(endpoint, controlPlaneRequestChannelOpt.get)
+    // controller请求处理器，启动一个线程
     controlPlaneAcceptor.addProcessors(1)
     controlPlaneAcceptorOpt = Some(controlPlaneAcceptor)
     info(s"Created control-plane acceptor and processor for endpoint : ${endpoint.listenerName}")
@@ -1133,6 +1137,7 @@ private[kafka] class Processor(
               trace(s"Begin re-authentication: $channel")
             else {
               val nowNanos = time.nanoseconds()
+              // 判断会话是否过期
               if (channel.serverAuthenticationSessionExpired(nowNanos)) {
                 // be sure to decrease connection count and drop any in-flight responses
                 debug(s"Disconnecting expired channel: $channel : $header")
@@ -1157,6 +1162,7 @@ private[kafka] class Processor(
                       apiVersionsRequest.data.clientSoftwareVersion))
                   }
                 }
+                // 将消息放入requestQueue
                 requestChannel.sendRequest(req)
                 selector.mute(connectionId)
                 handleChannelMuteEvent(connectionId, ChannelMuteEvent.REQUEST_RECEIVED)

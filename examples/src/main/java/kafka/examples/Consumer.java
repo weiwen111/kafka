@@ -92,7 +92,7 @@ public class Consumer extends Thread implements ConsumerRebalanceListener {
                     for (ConsumerRecord<Integer, String> record : records) {
                         Utils.maybePrintRecord(numRecords, record);
                     }
-                    remainingRecords -= records.count();
+                    //remainingRecords -= records.count();
                 } catch (AuthorizationException | UnsupportedVersionException
                          | RecordDeserializationException e) {
                     // we can't recover from these exceptions

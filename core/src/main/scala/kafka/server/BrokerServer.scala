@@ -414,6 +414,8 @@ class BrokerServer(
         apiVersionManager = apiVersionManager,
         clientMetricsManager = Some(clientMetricsManager))
 
+      // kafka request消息处理
+      // raft 才会使用到这个类
       dataPlaneRequestHandlerPool = new KafkaRequestHandlerPool(config.nodeId,
         socketServer.dataPlaneRequestChannel, dataPlaneRequestProcessor, time,
         config.numIoThreads, s"${DataPlaneAcceptor.MetricPrefix}RequestHandlerAvgIdlePercent",
