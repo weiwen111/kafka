@@ -1650,6 +1650,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         !authHelper.authorize(request.context, DESCRIBE, TRANSACTIONAL_ID, key))
       (Errors.TRANSACTIONAL_ID_AUTHORIZATION_FAILED, Node.noNode)
     else {
+      // 通过group id计算出coordinator在__consumer_offsets 的分区数
       val (partition, internalTopicName) = CoordinatorType.forId(keyType) match {
         case CoordinatorType.GROUP =>
           (groupCoordinator.partitionFor(key), GROUP_METADATA_TOPIC_NAME)
@@ -1668,6 +1669,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         if (topicMetadata.head.errorCode != Errors.NONE.code) {
           (Errors.COORDINATOR_NOT_AVAILABLE, Node.noNode)
         } else {
+          // 通过上面获取的__consumer_offsets 的分区数，获取分区的leader节点，就是该group id所在的coordinator节点
           val coordinatorEndpoint = topicMetadata.head.partitions.asScala
             .find(_.partitionIndex == partition)
             .filter(_.leaderId != MetadataResponse.NO_LEADER_ID)
@@ -1775,6 +1777,7 @@ class KafkaApis(val requestChannel: RequestChannel,
       requestHelper.sendMaybeThrottle(request, joinGroupRequest.getErrorResponse(Errors.GROUP_AUTHORIZATION_FAILED.exception))
       CompletableFuture.completedFuture[Unit](())
     } else {
+      // 构建joinGroup response
       groupCoordinator.joinGroup(
         request.context,
         joinGroupRequest.data,

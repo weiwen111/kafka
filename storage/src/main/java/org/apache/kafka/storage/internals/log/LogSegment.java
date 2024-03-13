@@ -264,6 +264,8 @@ public class LogSegment implements Closeable {
             }
             // append an entry to the index (if needed)
             if (bytesSinceLastIndexEntry > indexIntervalBytes) {
+                // 更新offsetindex和timeindex
+                // 当内容大于indexIntervalBytes的时候会进行更新
                 offsetIndex().append(largestOffset, physicalPosition);
                 timeIndex().maybeAppend(maxTimestampSoFar(), offsetOfMaxTimestampSoFar());
                 bytesSinceLastIndexEntry = 0;
@@ -332,6 +334,8 @@ public class LogSegment implements Closeable {
      *         offset is encountered which would overflow this segment)
      */
     public int appendFromFile(FileRecords records, int start) throws IOException {
+        // 写日志
+        // 日志操作
         int position = start;
         BufferSupplier bufferSupplier = new BufferSupplier.GrowableBufferSupplier();
         while (position < start + records.sizeInBytes()) {
@@ -428,9 +432,11 @@ public class LogSegment implements Closeable {
      *         or null if the startOffset is larger than the largest offset in this log
      */
     public FetchDataInfo read(long startOffset, int maxSize, long maxPosition, boolean minOneMessage) throws IOException {
+        // 获取消息
         if (maxSize < 0)
             throw new IllegalArgumentException("Invalid max size " + maxSize + " for log read from segment " + log);
 
+        // 从索引中获取offset对应的内存位置
         LogOffsetPosition startOffsetAndSize = translateOffset(startOffset);
 
         // if the start position is already off the end of the log, return null

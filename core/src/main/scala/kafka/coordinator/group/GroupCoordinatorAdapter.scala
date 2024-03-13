@@ -106,6 +106,7 @@ private[group] class GroupCoordinatorAdapter(
 
     val supportSkippingAssignment = context.apiVersion >= 9
 
+    // 构建joinGroup response
     coordinator.handleJoinGroup(
       request.groupId,
       request.memberId,
